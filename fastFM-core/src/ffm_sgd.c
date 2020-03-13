@@ -42,6 +42,9 @@ void ffm_fit_sgd(ffm_coef *coef, cs *A, ffm_vector *y, ffm_param *param) {
     // samples starts or the last column ends.
     // The last entry in Ap is the number of nz which is always greater
     // then the start of the last sample.
+    printf("~~~~~~~~~~~~~~~~\n");
+    printf("%d %d\n", Ap[sample_row], Ap[sample_row+1]);
+    printf("================\n");
     for (p = Ap[sample_row]; p < Ap[sample_row + 1]; p++) {
       double theta_w = ffm_vector_get(coef->w, Ai[p]);
       /*ffm_vector_set(
@@ -50,13 +53,23 @@ void ffm_fit_sgd(ffm_coef *coef, cs *A, ffm_vector *y, ffm_param *param) {
       double t;
       t= theta_w - step_size * (y_err * Ax[p] + theta_w * coef->lambda_w);
       if(t>0)
+      {
           ffm_vector_set(
           coef->w, Ai[p],
           1);
+          printf("%f\n", t); //Ai[p]);ffm_vector_get(coef->w, Ai[p]),  Ai[p]);
+          printf(" %d\n", ffm_vector_get(coef->w, Ai[p]));
+          printf(" %d %d\n", p, Ai[p]);
+      }
       else
+      {
           ffm_vector_set(
           coef->w, Ai[p],
           0);
+          printf("%f\n", t); //Ai[p]);ffm_vector_get(coef->w, Ai[p]),  Ai[p]);
+          printf(" %d\n", ffm_vector_get(coef->w, Ai[p]));
+          printf(" %d %d\n", p, Ai[p]);
+      }
       
     }
     if (k > 0)
