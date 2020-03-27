@@ -64,17 +64,6 @@ else:
       dataset[1][i] = 1
 
 
-  '''fm = sgd.FMRegression(n_iter=1000, init_stdev=0.01, rank=2, l2_reg_w=0.1, l2_reg_V=0.5)
-	X = sp.csc_matrix(np.array(dataset[0]), dtype=np.float64)
-	Y = np.array(dataset[1], dtype=np.float64)
-	fmm = fm.fit(X, Y)
-	#pr_w(fmm.w_)
-	X2 = sp.csc_matrix(np.array(dataset[0]), dtype=np.float64)
-	y_pre = fm.predict(X2)
-	s = 0.0
-	for l in range(0, len(y_pre)):
-		s += (y_pre[l] - dataset[1][l])**2
-	print(s/len(y_pre))'''
 		
 maxl = max(dataset[1])
 minl = min(dataset[1])
@@ -179,194 +168,7 @@ def subcode(X_train, X_test, b):
 	
         return X_train_o, X_test_o
 
-def normy(trainy,testy,l):
-  global miny
-  global maxy
-  miny = trainy[0]
-  maxy = trainy[0]
-  for i in range(1, len(trainy)):
-    if trainy[i] < miny:
-      miny = trainy[i]
-    if trainy[i] > maxy:
-      maxy = trainy[i]
-  for i in range(0, len(testy)):
-    if testy[i] < miny:
-      miny = testy[i]
-    if testy[i] > maxy:
-      maxy = testy[i]
-  dt = (maxy - miny) * 1.0 / (2 * l)
-  ts = 2 * l * 1.0 / (maxy - miny)
-  #print("times",ts)
-  for i in range(len(trainy)):
-    trainy[i] = -l + 2 * ((trainy[i] - miny + dt ) // (2 * dt))
-  for i in range(len(testy)):
-    testy[i] = -l + 2 * ((testy[i] - miny + dt ) // (2 * dt))
-  return trainy,testy,ts
-  
-def dnormy(y,l,ts):
-  global miny
-  global maxy
-  #print(miny,l,ts)
-  for i in range(len(y)):
-    y[i] = miny + 2 * ((y[i] + l) / (2 * ts))
-  return y
-    
-def compt(w,V,x,y):
-  h = [0 for i in range(len(y))]
-  g = [0 for i in range(len(y))]
-  for i in range(0, len(y)):
-    for j in range(0, len(w)):
-      h[i] += w[j] * x[i][j]
-    for f in range(0, len(V)):
-      g1 = 0.0
-      g2 = 0.0
-      for j in range(0, len(V[0])):
-        g1 += V[f][j] * x[i][j]
-        g2 += V[f][j] * V[f][j] * x[i][j] * x[i][j]
-      g[i] += g1 * g1 - g2
-    g[i] /= 2
-  return h,g
-  
-def compt2(w,V,x,y):
-  h = [0 for i in range(len(y))]
-  g = [0 for i in range(len(y))]
-  for i in range(0, len(y)):
-    for j in range(0, len(w)):
-      h[i] += w[j] * x[i][j]
-    g2 = np.dot(x[i],x[i].T)
-    for f in range(0, len(V)):
-      g1 = 0.0
-      for j in range(0, len(V[0])):
-        g1 += V[f][j] * x[i][j]
-        #g2 += V[f][j] * V[f][j] * x[i][j] * x[i][j]
-      g[i] += g1 * g1 - g2
-    g[i] /= 2
-  return h,g
 
-def los(a):
-  if a < 0:
-    return 0
-  else:
-    return a
-  
-def On_dev(w,V,h,g,trainx,y,fn):
-  #h,g = compt(w,V,trainx,y)
-  n = len(y)
-  m = len(V)
-  p = len(V[0])
-  print(len(w),len(V),len(V[0]))
-  a = [0 for i in range(n)]
-  b = [0 for i in range(n)]
-  bb = [0 for i in range(n)]
-  global ch
-  rch = ch - 1
-  
-  while ch != rch:
-    cc = 0
-    for j in range(p):
-      a = np.array(h) +np.array(g)
-      delta = a - 2*w[j]*trainx[:,j]
-      c1 = np.sum(np.max(np.vstack((np.zeros((1,n)),1 - y*a)),axis = 0))
-      c2 = np.sum(np.max(np.vstack((np.zeros((1,n)),1 - y*delta)),axis = 0))
-      if c2 < c1:
-        wn = -w[j]
-        h = h - 2*w[j]*trainx[:,j]
-        w[j] = wn
-        ch += 1
-        cc += c1 - c2
-    if cc <  fn:
-      break
-  rch = ch - 1
-  while ch != rch:
-    dd = 0
-    for j in range(0,p):
-      for t in range(0,m):
-        #for i in range(0,n):
-        b = np.array(h) + np.array(g)
-        delta = b - 2 * V[t][j] * trainx[:,j] * np.dot(V[t],trainx.T) + 2 * V[t][j] * V[t][j] * trainx[:,j] * trainx[:,j]
-        d1 = np.sum(np.max(np.vstack((np.zeros((1,n)),1 - y*b)),axis = 0))
-        d2 = np.sum(np.max(np.vstack((np.zeros((1,n)),1 - y*delta)),axis = 0))
-        if d2 < d1:
-          Vn = -V[t][j]
-          g = g - 2 * V[t][j] * trainx[:,j] * np.dot(V[t], trainx.T) + 2 * V[t][j] * V[t][j] * trainx[:,j] * trainx[:,j]
-          V[t][j] = Vn
-          ch += 1
-          dd += d1 - d2
-    if dd < fn:
-      break
-  return w, V, h, g
-
-
-def one(w0_,w_,V_,trainx,trainy,testx,testy,k,b):
-  '''for i in range(len(testx)):
-    for j in range(len(testx[0])):
-      if testx[i][j] == 1:
-        print(i,j)'''
-  w = np.array(w_)
-  V = np.array(V_)
-  s = 0
-	#for i in range(0, len(trainy)):
-		#trainy[i] -= w0_
-	#for i in range(0, len(testy)):
-		#testy[i] -= w0_
-  start = time.time()
-  h,g = compt(w,V,testx,testy)
-  for i in range(0, len(testy)):
-    if (h[i] + g[i] + w0_) * testy[i] > 0:
-      s += 1
-  end = time.time()
-  print("sefm",'k=%d' %k,'b=%d' %b,s,len(testy),s/len(testy),'time = %fs' %(end-start))
-
-#Map to {-1,1}
-  for i in range(0, len(w)):
-    if w[i] >= 0:
-      w[i] = 1
-    else:
-      w[i] = -1
-		#w[i] = 0
-  for i in range(0, len(V)):
-    for j in range(0, len(V[0])):
-      if V[i][j] >= 0:
-        V[i][j] = 1
-      else:
-        V[i][j] = -1
-  s = 0
-  h,g = compt(w,V,testx,testy)
-  for i in range(0, len(testy)):
-    if (h[i] + g[i]) * testy[i] > 0:
-      s += 1
-  print("one",'k=%d' %k,'b=%d' %b,s,len(testy),s/len(testy))
-  
-  global ch
-  h,g = compt(w,V,trainx,trainy) 
-  ch = 0
-  lch = ch - 1
-  while ch != lch:
-    lch = ch
-    w,V,h,g = On_dev(w,V,h,g,trainx,trainy,len(trainy)/1000)
-    print(ch)
-    
-#On-device FM
-  s = 0
-  start = time.time()
-  h,g = compt(w,V,testx,testy)
-  for i in range(0, len(testy)):
-    if (h[i] + g[i]) * testy[i] > 0:
-      s += 1
-  end = time.time()
-  print("odfm",'k=%d' %k,'b=%d' %b,s,len(testy),s/len(testy), 'time = %fs' %(end-start))
-  
-  s = 0
-  start = time.time()
-  h,g = compt2(w,V,testx,testy)
-  for i in range(0, len(testy)):
-    if (h[i] + g[i]) * testy[i] > 0:
-      s += 1
-  end = time.time()
-  print("odfm",'k=%d' %k,'b=%d' %b,s,len(testy),s/len(testy), 'time = %fs' %(end-start))
-
-    
-  print("=====================================")
 		
 
 #SEFM方法的函数
@@ -403,30 +205,10 @@ def se_fm(X_train, y_train, X_test, y_test, k, b):
       if y_pre1[i] * y_test[i] > 0:
         s += 1
     end = time.time()
-    print("SEFM",'k=%d' %k,'b=%d' %b, s,len(y_pre1),s/len(y_pre1), 'time = %fs' %(end-start))
+    print("ODFM",'k=%d' %k,'b=%d' %b, s,len(y_pre1),s/len(y_pre1), 'time = %fs' %(end-start))
     print(fmm.w_)
     print(fmm.V_)
-    '''else:
-      for i in range(0, len(fmm.w_)):
-        if fmm.w_[i] >= 0:
-          fmm.w_[i] = 1
-        else:
-          fmm.w_[i] = -1
-      for i in range(0, len(fmm.V_)):
-        for j in range(0, len(fmm.V_[0])):
-          if fmm.V_[i][j] >= 0:
-            fmm.V_[i][j] = 1
-          else:
-            fmm.V_[i][j] = -1
-      start = time.time()
-      y_pre1 = fm.predict(X2)
-      s = 0
-      for i in range(0, len(y_test)):
-        if y_pre1[i] * y_test[i] > 0:
-          s += 1
-      end = time.time()
-      print("one",'k=%d' %k,'b=%d' %b, s,len(y_pre1),s/len(y_pre1), 'time = %fs' %(end-start))'''
-    #one(fmm.w0_,fmm.w_,fmm.V_,X_train_o,y_train,X_test_o,y_test,k,b)
+    
     return s/len(y_pre)
 
 
@@ -463,26 +245,5 @@ for i in range(0,1):
   k *= 2
 
 
-#print(max_k, max_b, max_step)
-#对预测数据使用最优的k值、b值、步长值的SEFM方法进行分类，输出最优准确率和相对应的运行时间
-'''pr = []
-pr_t = []
-mean_acc = 0.0
-pr.append('rank=%d b=%d step_size=%.2f'%(max_k,max_b,max_step))
-pr_t.append('rank=%d b=%d step_size=%.2f'%(max_k,max_b,max_step))
-start = time.time()
-for num in range(0,5): 
-    acc = se_fm(X_train[num], y_train[num], X_test[num], y_test[num], max_k, max_b, max_step)
-    mean_acc += acc
-    pr.append('%.2f%%' %(acc * 100))
-end = time.time()
-mean_acc /= 5
-pr.append('mean=%.2f%%' %(mean_acc * 100))
-pr_t.append('%fs' %((end-start)/5))
-print(pr)
-print(pr_t)
-print("The Best Accuracy is:")
-print('%.2f%%' %(mean_acc * 100))
-print("And its running time is:")
-print('%fs' %((end-start)/5))'''
+
 
