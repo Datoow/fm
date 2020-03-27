@@ -179,13 +179,13 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
   ffm_fit_sgd(&coef, X, &ffm_y, param);
   
-  printf("yyy\n");
+  
   
   for(int f = 0; f < n_features; f++){
 
       double t = ffm_vector_get( coef.w, f);
-      printf("%d ", t);
-      if (t > 0) 
+      printf("%f ", t);
+      if (t > 0.000001) 
         
         ffm_vector_set( coef.w, f, 1);
       
@@ -193,16 +193,17 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
       
         ffm_vector_set( coef.w, f, -1);
         
-      printf("%d\n", ffm_vector_get( coef.w, f));
+      printf("%f\n", ffm_vector_get( coef.w, f));
   }
 
+  printf("%d %d\n",k,n_features);
   for(int j = 0; j < k; j++){
 
     for(int f = 0; f < n_features; f++){
 
         double t = ffm_matrix_get( coef.V, j, f);
-        printf("%d ", t);
-        if (t > 0) 
+        //printf("%d ", t);
+        if (t > 0.000001) 
             
             ffm_matrix_set( coef.V, j, f, 1);
         
@@ -210,12 +211,12 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
             ffm_matrix_set( coef.V, j, f, -1);
        
-       printf("%d\n", ffm_vector_get( coef.w, f));
+       printf("%f\n", ffm_matrix_get( coef.V, j, f));
     }
     printf("\n");
   } 
   
-/*
+
   double y_pred[MAX];
   
   int iter = 0;
@@ -224,7 +225,7 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
     
     for(int f = 0; f < n_features; f++){
 
-        ffm_predict(&w_0, &w[0], &V[0], X, y_pred, k);
+        ffm_predict(&coef.w_0, &coef.w[0], &coef.V[0], X, y_pred, k);
 
         double loss1 = 0.0;
 
@@ -234,13 +235,12 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
                 loss1 += 1 - y[i] * y_pred[i];
         
-        double t = ffm_vector_get( &w, f);
+        double t = ffm_vector_get( coef.w, f);
         
-        printf("%.f ",t);
 
-        ffm_vector_set( &w, f, -t);
+        ffm_vector_set( coef.w, f, -t);
         
-        ffm_predict(&w_0, &w[0], &V[0], X, y_pred, k);
+        ffm_predict(&coef.w_0, &coef.w[0], &coef.V[0], X, y_pred, k);
         
         double loss2 = 0.0;
         
@@ -252,9 +252,9 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
         
         if (loss2 > loss1){
         
-            double t = ffm_vector_get( &w, f);
+            double t = ffm_vector_get( coef.w, f);
 
-            ffm_vector_set( &w, f, -t);
+            ffm_vector_set( coef.w, f, -t);
         
         }
 
@@ -264,7 +264,7 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
         for(int f = 0; f < n_features; f++){
         
-            ffm_predict( &w_0, &w[0], &V[0], X, y_pred, k);
+            ffm_predict( &coef.w_0, &coef.w[0], &coef.V[0], X, y_pred, k);
 
             double loss1 = 0.0;
 
@@ -274,11 +274,11 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
                     loss1 += 1 - y[i] * y_pred[i];
         
-            double t = ffm_matrix_get( &V, j, f);
+            double t = ffm_matrix_get( coef.V, j, f);
 
-            ffm_matrix_set( &V, j, f, -t);
+            ffm_matrix_set( coef.V, j, f, -t);
         
-            ffm_predict( &w_0, &w[0], &V[0], X, y_pred, k);
+            ffm_predict( &coef.w_0, &coef.w[0], &coef.V[0], X, y_pred, k);
         
             double loss2 = 0.0;
         
@@ -290,9 +290,9 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
         
             if (loss2 > loss1){
         
-                double t = ffm_matrix_get( &V, j, f);
+                double t = ffm_matrix_get( coef.V, j, f);
 
-                ffm_matrix_set( &V, j, f, -t);
+                ffm_matrix_set( coef.V, j, f, -t);
             
             }
             
@@ -302,7 +302,21 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
 
     iter++;
   
-  }*/
+  }
+  printf("============1=============\n");
+  for(int f = 0; f < n_features; f++){
+
+        
+      printf("%f\n", w[f]);
+  }
+  printf("============2==============\n");
+    for(int j = 0; j < k; j++){
+    for(int f = 0; f < n_features; f++){
+       
+       printf("%f\n", V[j * n_features + f]);
+    }
+    printf("\n");
+  } 
   // copy the last coef values back into the python memory
 
   *w_0 = coef.w_0;
