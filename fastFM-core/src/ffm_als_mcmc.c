@@ -13,11 +13,11 @@ void sparse_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred) {
   cs_spfree (X) ;
 }
 
-void col_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred) {
+void V_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred) {
 
-  ffm_vector_set_all(y_pred, coef->w_0);
-  if (coef->w) cs_gaxpy(A, coef->w->data, y_pred->data);
-  if (!coef->V) return;
+  //ffm_vector_set_all(y_pred, coef->w_0);
+  //if (coef->w) Cs_row_gaxpy(A, coef->w->data, y_pred->data);
+  //if (!coef->V) return;
 
   ffm_matrix *V = coef->V;
   int k = V->size0;
@@ -28,7 +28,14 @@ void col_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred) {
   Ap = A->p;
   Ai = A->i;
   Ax = A->x;
-
+  
+  /*
+  for (j = 0; j < n; j++)
+    for (p = Ap[j]; p < Ap[j + 1]; p++) {
+      double tmp_x = Ax[p];
+      y_pred->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+    }
+  */
   for (f = 0; f < k; f++) {
     for (j = 0; j < n; j++) {
       double tmp_sum = 0;
@@ -36,7 +43,7 @@ void col_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred) {
         double tmp_v = ffm_matrix_get(V, f, Ai[p]);
         double tmp_x = Ax[p];
         tmp_sum += tmp_x * tmp_v;
-        y_pred->data[j] -= 0.5 * (tmp_x * tmp_x) * (tmp_v * tmp_v);
+        //y_pred->data[j] -= 0.5 * (tmp_x * tmp_x);
       }
       y_pred->data[j] += 0.5 * (tmp_sum * tmp_sum);
     }
@@ -67,6 +74,12 @@ int eval_second_order_term(ffm_matrix *V, cs *A, ffm_vector *y) {
   Ap = A->p;
   Ai = A->i;
   Ax = A->x;
+  
+  for (j = 0; j < n; j++)
+    for (p = Ap[j]; p < Ap[j + 1]; p++) {
+      double tmp_x = Ax[p];
+      y->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+    }
   // over all k
   for (f = 0; f < k; f++) {
     // over all rows
@@ -85,7 +98,7 @@ int eval_second_order_term(ffm_matrix *V, cs *A, ffm_vector *y) {
         double tmp_v = ffm_matrix_get(V, f, Ai[p]);
         double tmp_x = Ax[p];
         tmp_sum += tmp_x * tmp_v;
-        y->data[j] -= 0.5 * (tmp_x * tmp_x) * (tmp_v * tmp_v);
+        //y->data[j] -= 0.5 * (tmp_x * tmp_x);
       }
       y->data[j] += 0.5 * (tmp_sum * tmp_sum);
     }

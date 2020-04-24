@@ -75,7 +75,7 @@ void sparse_predict(ffm_coef *coef, cs *X, ffm_vector *y_pred);
 
 void row_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred);
 
-void col_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred);
+void V_predict(ffm_coef *coef, cs *A, ffm_vector *y_pred);
 
 // ############### internal functions for ALS / MCMC ####################
 

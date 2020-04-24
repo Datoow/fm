@@ -198,17 +198,50 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
   } 
 
   ffm_vector *y_pred = ffm_vector_calloc(n_samples);
+  ffm_vector *y_pred_t = ffm_vector_calloc(n_samples);
+  //col_predict(&coef, X, y_pred);
+  //for(int i = 0; i < n_samples; i++)
+   // printf("%f %f\n",y[i],y_pred->data[i]);
+  //printf("\n");
+  int p, j, f, n, *Ap, *Ai;
+  double *Ax;
+  n = X->n;
+  Ap = X->p;
+  Ai = X->i;
+  Ax = X->x;
   int c,ch;
   c = 1;
   while(c)
   {
     c = 0;
+    
+    ffm_vector_set_all(y_pred_t, coef.w_0);
+    for (j = 0; j < n; j++)
+      for (p = Ap[j]; p < Ap[j + 1]; p++) {
+        double tmp_x = Ax[p];
+        y_pred_t->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+      }
+    V_predict(&coef, X, y_pred_t);
     ch = 1;
     while (ch){  
       ch = 0;
+      //for (j = 0; j < X->n; j++)
+        //y_pred_t->data[j] = 0;
+      /*ffm_vector_set_all(y_pred_t, coef.w_0);
+      for (j = 0; j < n; j++)
+        for (p = Ap[j]; p < Ap[j + 1]; p++) {
+          double tmp_x = Ax[p];
+          y_pred_t->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+        }
+      V_predict(&coef, X, y_pred_t);*/
       for(int f = 0; f < n_features; f++){
   
-          col_predict(&coef, X, y_pred);
+          //col_predict(&coef, X, y_pred);
+          //y_pred = y_pred_t;
+          for (j = 0; j < n; j++)
+            y_pred->data[j] = y_pred_t->data[j];
+          Cs_row_gaxpy(X, coef.w->data, y_pred->data);
+            
           double loss1 = 0.0;
           for(int i = 0; i < n_samples; i++)
               if ((1 - y[i] * y_pred->data[i]) > 0)
@@ -217,7 +250,11 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
           double t = ffm_vector_get( coef.w, f);
           ffm_vector_set( coef.w, f, -t);
           
-          col_predict(&coef, X, y_pred);
+          //col_predict(&coef, X, y_pred);
+          for (j = 0; j < n; j++)
+            y_pred->data[j] = y_pred_t->data[j];
+          Cs_row_gaxpy(X, coef.w->data, y_pred->data);
+            
           double loss2 = 0.0;
           for(int i = 0; i < n_samples; i++)
               if ((1 - y[i] * y_pred->data[i]) > 0)
@@ -231,27 +268,48 @@ void ffm_sgd_fit(double *w_0, double *w, double *V, cs *X, double *y,
       }
     }
     printf("c1:%d\n", c);
+    
+    ffm_vector_set_all(y_pred_t, coef.w_0);
+    Cs_row_gaxpy(X, coef.w->data, y_pred_t->data);
+    for (j = 0; j < n; j++)
+      for (p = Ap[j]; p < Ap[j + 1]; p++) {
+        double tmp_x = Ax[p];
+        y_pred_t->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+      }
     ch = 1;
     while(ch){
       ch = 0;
+     /* ffm_vector_set_all(y_pred_t, coef.w_0);
+      Cs_row_gaxpy(X, coef.w->data, y_pred_t->data);
+      for (j = 0; j < n; j++)
+        for (p = Ap[j]; p < Ap[j + 1]; p++) {
+          double tmp_x = Ax[p];
+          y_pred_t->data[j] -= 0.5 * (tmp_x * tmp_x) * k;
+        }*/
       for(int j = 0; j < k; j++){
           for(int f = 0; f < n_features; f++){
           
-              col_predict(&coef, X, y_pred);
+              //col_predict(&coef, X, y_pred);
+              for (int i = 0; i < n; i++)
+                  y_pred->data[i] = y_pred_t->data[i];
+              V_predict(&coef, X, y_pred);
+              
               double loss1 = 0.0;
               for(int i =0; i < n_samples; i++)
                   if ((1 - y[i] * y_pred->data[i]) > 0)
                       loss1 += 1 - y[i] * y_pred->data[i];  
-                            
+                         
               double t = ffm_matrix_get( coef.V, j, f);
               ffm_matrix_set( coef.V, j, f, -t);  
+              //col_predict(&coef, X, y_pred); 
+              for (int i = 0; i < n; i++)
+                  y_pred->data[i] = y_pred_t->data[i];
+              V_predict(&coef, X, y_pred);
                     
-              col_predict(&coef, X, y_pred);       
               double loss2 = 0.0;        
               for(int i =0; i < n_samples; i++)
                   if ((1 - y[i] * y_pred->data[i]) > 0)
-                      loss2 += 1 - y[i] * y_pred->data[i];
-                            
+                      loss2 += 1 - y[i] * y_pred->data[i];    
               if (loss2 >= loss1){  
                   double t = ffm_matrix_get( coef.V, j, f);
                   ffm_matrix_set( coef.V, j, f, -t);          
